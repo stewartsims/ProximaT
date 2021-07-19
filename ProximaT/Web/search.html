@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wheeler Dealers episode finder</title>
+</head>
+<body onload="addEnterKeyListeners()">
+    <h1>Wheeler Dealers episode finder</h1>
+    <form>
+        <div>
+            <label for="object">Enter marque or model (e.g. `VW' or `Beetle'):</label>
+            <input id="object" name="object" type="text" />
+        </div>
+        <p>And / or</p>
+        <div>
+            <label for="subject">Enter subject (e.g. `interior' or `service'):</label>
+            <input id="subject" name="subject" type="text" />
+        </div>
+        <button type="button" onclick="search(); return false;">Go!</button>
+        <script>
+            const SLOP = 100;
+            const SNIPPET_SIZE = 256; 
+
+            function search() {
+                var objectInput = document.getElementById("object").value;
+                var subjectInput = document.getElementById("subject").value;
+                if (isNullOrEmpty(objectInput) && isNullOrEmpty(subjectInput)) {
+                    alert("Invalid input");
+                    return;
+                }
+                var url = "https://cors-anywhere.herokuapp.com/https://en.wikipedia.org/wiki/List_of_Wheeler_Dealers_episodes";
+                httpGet(url, objectInput, subjectInput);
+            }
+
+            function getResults(page, objectInput, subjectInput) {
+                var proximityRegex = "\\b(?:" + objectInput + "(?:\\W+\\w+){1," + SLOP + "}?\\W+" + subjectInput + "|" + subjectInput + "(?:\\W+\\w+){1," + SLOP + "}?\\W+" + objectInput + ")\\b";
+
+                if (isNullOrEmpty(objectInput)) {
+                    proximityRegex = subjectInput;
+                }
+
+                if (isNullOrEmpty(subjectInput)) {
+                    proximityRegex = objectInput;
+                }
+
+                var regex = new RegExp(proximityRegex, "g");
+                var hits = [];
+                var result;
+                while ((result = regex.exec(page)) != null) {
+                    hits.push(result.index);
+                }
+
+                var snippets = [];
+                hits.forEach(hit => {
+                    var snippetStart = (hit - SNIPPET_SIZE/2) > 0 ? hit - SNIPPET_SIZE/2 : 0;
+                    var snippet = "..." + page.substr(snippetStart, SNIPPET_SIZE) + "...";
+                    var pageToHit = page.substr(0, hit);
+                    var seriesPosition = pageToHit.lastIndexOf(">Series ")+1;
+                    var seriesText = null;
+                    if (seriesPosition > 0)
+                    {
+                        var textAfterSeries = pageToHit.substr(seriesPosition);
+                        if (textAfterSeries.indexOf('<') > 0 && pageToHit.lastIndexOf("<td class=\"summary\" style=\"text-align:left\">") > 0)
+                        {
+                            seriesText = textAfterSeries.substr(0, textAfterSeries.indexOf('<'));
+                            var pageToVehicle = pageToHit.substr(0, pageToHit.lastIndexOf("<td class=\"summary\" style=\"text-align:left\">"));
+                            var episodePosition = pageToVehicle.lastIndexOf("<td style=\"text-align:center\">") + 30;
+                            if (episodePosition > 0)
+                            {
+                                var textAfterEpisode = pageToVehicle.substr(episodePosition);
+                                var episodeText = textAfterEpisode.substr(0, textAfterEpisode.indexOf('<'));
+                                seriesText += ", Episode " + episodeText;
+                            }
+                            snippet = "<strong>" + seriesText + "</strong><p>" + snippet + "</p>";
+                        }
+                    }
+                    if (seriesText != null && !snippets.some(snippetToCheck => snippetToCheck.indexOf(seriesText) != -1))
+                    {
+                        snippets.push(snippet);
+                    }
+                });
+
+                var matches = document.getElementById("matches");
+                matches.innerHTML = snippets.length + " match" + (snippets.length != 1 ? "es" : "") + " found";
+                var results = document.getElementById("results");
+                results.innerHTML = "";
+                snippets.forEach(snippet => {
+                    results.innerHTML += "<li>" + snippet + "</li>";
+                });
+            }
+
+            function isNullOrEmpty(string) {
+                return string == null || string == "";
+            }
+
+            function httpGet(theUrl, objectInput, subjectInput)
+            {
+                if (window.XMLHttpRequest)
+                {// code for IE7+, Firefox, Chrome, Opera, Safari
+                    xmlhttp=new XMLHttpRequest();
+                }
+                else
+                {// code for IE6, IE5
+                    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+                }
+                xmlhttp.onreadystatechange=function()
+                {
+                    if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                    {
+                        getResults(xmlhttp.responseText, objectInput, subjectInput);
+                    }
+                }
+                xmlhttp.open("GET", theUrl, false );
+                xmlhttp.send();    
+            }
+
+            function addEnterKeyListeners() {
+                var objectInput = document.getElementById("object");
+                var subjectInput = document.getElementById("subject");
+                addSearchOnEnter(objectInput);
+                addSearchOnEnter(subjectInput);
+            };
+
+            function addSearchOnEnter(input) {
+                input.addEventListener("keyup", function (event) {
+                    // Number 13 is the "Enter" key on the keyboard
+                    if (event.keyCode === 13) {
+                        // Cancel the default action, if needed
+                        event.preventDefault();
+                        search();
+                    }
+                });
+            }
+        </script>
+    </form>
+    <p id="matches"></p>
+    <ol id="results">
+    </ol>
+    <p>See <a href="https://ssims.co.uk">ssims.co.uk</a> for more info about the author.</p>
+    <p>Note because this uses Wikipedia, this and any derivatives are <a href="https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License">licensed under CC Attribution-ShareAlike.</a></p>
+</body>
+</html>

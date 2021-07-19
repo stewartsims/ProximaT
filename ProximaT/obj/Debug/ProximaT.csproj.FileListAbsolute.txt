@@ -1,0 +1,6 @@
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\bin\Debug\ProximaT.exe.config
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\bin\Debug\ProximaT.exe
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\bin\Debug\ProximaT.pdb
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\obj\Debug\ProximaT.csprojAssemblyReference.cache
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\obj\Debug\ProximaT.exe
+C:\Users\Stewart\Documents\ProximaT\ProximaT\ProximaT\obj\Debug\ProximaT.pdb
